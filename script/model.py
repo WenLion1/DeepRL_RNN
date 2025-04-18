@@ -36,12 +36,13 @@ def model_type(model_name: str, input_size: int, hidden_size: int, num_layers: i
 class RNN(nn.Module):
     def __init__(self,
                  device='cpu',
-                 input_size=5,
+                 input_size=7,
                  hidden_size=32,
                  num_layers=1,
                  batch_first=True,
                  output_size=1,
-                 model_name='rnn',):
+                 model_name='rnn',
+                 is_sigmoid=1,):
         super(RNN, self).__init__()
         self.device = device
         self.input_size = input_size
@@ -50,6 +51,7 @@ class RNN(nn.Module):
         self.num_layers = num_layers
         self.batch_first = batch_first
         self.model_name = model_name
+        self.is_sigmoid = is_sigmoid
 
         self.network = model_type(model_name=self.model_name,
                                   input_size=self.input_size,
@@ -58,13 +60,15 @@ class RNN(nn.Module):
                                   batch_first=self.batch_first).to(self.device)
         self.fc = nn.Linear(self.hidden_size, self.output_size).to(self.device)
 
-    def forward(self, difficulty, switch):
+    def forward(self, difficulty, switch, is_start):
         # difficulty: (batch_size, seq_len, 3)
         # switch: (batch_size, seq_len, 2)
-        input = torch.cat((difficulty, switch), dim=2).to(self.device)
+        # is_start: (batch_size, seq_len, 1)
+        input = torch.cat((difficulty, switch, is_start), dim=2).to(self.device)
         out, hn = self.network(input)
         pre = self.fc(out)
-        pre = torch.sigmoid(pre)
+        if self.is_sigmoid == 1:
+            pre = torch.sigmoid(pre)
         return pre, out, hn
 
 if __name__ == "__main__":
