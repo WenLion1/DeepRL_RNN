@@ -12,15 +12,8 @@ from tqdm import tqdm
 from collections import deque
 from script.dalaloader import extract_behavioral_data, RNNInputDataset, split_data_by_ratio, reshape_own
 from script.model import RNN
+from script.utils import set_seed, reshape_and_mask_tdev
 
-
-def set_seed(seed=42):
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
 
 def train_val_loop(model,
                    dataset_train,
@@ -76,10 +69,18 @@ def train_val_loop(model,
             diff_tensor, switch_tensor, is_start_tensor, targets = diff_tensor.float().to(
                 device), switch_tensor.float().to(
                 device), is_start_tensor.float().to(device), targets.float().to(device)
-            # print(diff_tensor[0][0])
-            # print(switch_tensor[0][0])
-            # print(is_start_tensor[0][0])
-            # print(targets[0][0][0])
+            # print(diff_tensor.shape)
+            # print(switch_tensor.shape)
+            # asdasd
+
+            # # 当switch在当前trial为1时，让diff变为[0, 0, 0]
+            # diff_tensor[0], switch_tensor[0] = reshape_and_mask_tdev(diff=diff_tensor[0],
+            #                                                          switch=switch_tensor[0])
+
+            # print(diff_tensor.shape)
+            # print(switch_tensor.shape)
+            # print(diff_tensor[0])
+            # print(switch_tensor[0])
             # asdasd
 
             optimizer.zero_grad()
@@ -265,5 +266,5 @@ if __name__ == "__main__":
                    dataset_valid=dataset_all,
                    save_model_path="../model",
                    early_stop_patience=10,
-                   model_name="best_model_switch_weight_10.pt",
-                   epochs=10000,)
+                   model_name="best_model_switch_weight_diff0.pt",
+                   epochs=10000, )
