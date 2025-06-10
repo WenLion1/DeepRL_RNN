@@ -73,9 +73,15 @@ def train_val_loop(model,
             # print(switch_tensor.shape)
             # asdasd
 
-            # # 当switch在当前trial为1时，让diff变为[0, 0, 0]
-            # diff_tensor[0], switch_tensor[0] = reshape_and_mask_tdev(diff=diff_tensor[0],
-            #                                                          switch=switch_tensor[0])
+            # 当switch在当前trial为1时，让diff变为[0, 0, 0]
+            diff_tensor[0], switch_tensor[0] = reshape_and_mask_tdev(diff=diff_tensor[0],
+                                                                     switch=switch_tensor[0])
+            # for n in range(diff_tensor.shape[1]):
+            #     print(diff_tensor[0][n])
+            #     print(switch_tensor[0][n])
+            #     print(targets[0][0][n])
+            #     print("--------------------")
+            # dfgvdfv
 
             # print(diff_tensor.shape)
             # print(switch_tensor.shape)
@@ -84,7 +90,12 @@ def train_val_loop(model,
             # asdasd
 
             optimizer.zero_grad()
-            pre, out, hn = model(diff_tensor, switch_tensor, is_start_tensor)  # 拆出 difficulty 和 switch
+            pre, out, hn, is_switch1 = model(diff_tensor, switch_tensor, is_start_tensor)  # 拆出 difficulty 和 switch
+
+            # # 构造 ground truth: 当前 step 是否为 [0, 1]
+            # switch_is_01 = (switch_tensor[:, :, 1] == 1).float().unsqueeze(-1)  # shape: (B, T, 1)
+            # # loss_s1：模型对switch==[0,1]的预测准确性（二分类）
+            # loss_s1 = nn.BCEWithLogitsLoss()(is_switch1, switch_is_01)
 
             batch_loss = 0.0
             loss_count = 0
@@ -114,7 +125,7 @@ def train_val_loop(model,
                 batch_loss += loss_t
                 loss_count += 1
 
-            batch_loss = batch_loss / loss_count
+            batch_loss = (batch_loss / loss_count)
 
             # targets = targets.transpose(1, 2)
             #
@@ -147,7 +158,12 @@ def train_val_loop(model,
             for diff_tensor, switch_tensor, is_start, targets in val_loader:
                 diff_tensor, switch_tensor, is_start, targets = diff_tensor.float().to(
                     device), switch_tensor.float().to(device), is_start.float().to(device), targets.float().to(device)
-                outputs, _, _ = model(diff_tensor, switch_tensor, is_start)
+                outputs, _, _, is_switch2 = model(diff_tensor, switch_tensor, is_start)
+
+                # # 构造 ground truth: 当前 step 是否为 [0, 1]
+                # switch_is_01 = (switch_tensor[:, :, 1] == 1).float().unsqueeze(-1)  # shape: (B, T, 1)
+                # # loss_s1：模型对switch==[0,1]的预测准确性（二分类）
+                # loss_s1 = nn.BCEWithLogitsLoss()(is_switch2, switch_is_01)
 
                 batch_loss = 0.0
                 loss_count = 0
@@ -170,7 +186,6 @@ def train_val_loop(model,
                             weight = 10.0
                     else:
                         weight = 1.0  # 如果不是严格 [0,1] 或 [1,0]，默认不加权
-                        mistake_count = 0  # 也可考虑不重置，取决于你定义是否严格判断
 
                     loss_t = weight * nn.functional.mse_loss(pre_t, target_t)
 
@@ -218,7 +233,8 @@ def train_val_loop(model,
 
 if __name__ == "__main__":
     set_seed(42)
-    model = RNN(is_sigmoid=1)
+    model = RNN(is_sigmoid=1,
+                hidden_size=32, )
 
     """
      预测切换概率

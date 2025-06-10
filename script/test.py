@@ -47,7 +47,12 @@ def test(model,
             is_start = is_start.float().to(device)
             targets = targets.float().to(device)
 
-            outputs, hidden_states, _ = model(diff_tensor, switch_tensor, is_start)
+            outputs, hidden_states, _, is_switch1 = model(diff_tensor, switch_tensor, is_start)
+            # for n in range(is_switch1.shape[1]):
+            #     print(is_switch1[0][n])
+            #     print(switch_tensor[0][n])
+            #     print("---------------")
+            # asdasd
 
             # 保存每个 batch 的输出和隐藏状态
             all_outputs.append(outputs.cpu())
@@ -164,7 +169,7 @@ if __name__ == "__main__":
     验证模型
     """
     model = RNN(is_sigmoid=1)
-    model.load_state_dict(torch.load("../model/best_model_switch_weight_10.pt"))
+    model.load_state_dict(torch.load("../model/best_model_switch_weight_diff0.pt"))
 
     """
     预测切换概率
@@ -206,4 +211,5 @@ if __name__ == "__main__":
     pre_save_in_mat("../data/infer_data.mat",
                     outputs,
                     hidden_states=all_hidden_state,
-                    save_path="../data/update_data_switch_weight_10.mat")
+                    save_path="../data/update_data_switch_weight_diff0.mat")
+    print("已保存")

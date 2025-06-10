@@ -59,6 +59,8 @@ class RNN(nn.Module):
                                   num_layers=self.num_layers,
                                   batch_first=self.batch_first).to(self.device)
         self.fc = nn.Linear(self.hidden_size, self.output_size).to(self.device)
+        # 辅助输出层：判断 switch 是否是 [0,1]
+        self.fc_aux = nn.Linear(self.hidden_size, 1).to(self.device)
 
     def forward(self, difficulty, switch, is_start):
         # difficulty: (batch_size, seq_len, 3)
@@ -67,9 +69,12 @@ class RNN(nn.Module):
         input = torch.cat((difficulty, switch, is_start), dim=2).to(self.device)
         out, hn = self.network(input)
         pre = self.fc(out)
+        # 辅助任务输出（预测是否 switch == [0,1]）
+        aux_pred = self.fc_aux(out)
         if self.is_sigmoid == 1:
             pre = torch.sigmoid(pre)
-        return pre, out, hn
+            aux_pred = torch.sigmoid(aux_pred)
+        return pre, out, hn, aux_pred
 
 if __name__ == "__main__":
     batch_size = 4
